@@ -105,7 +105,7 @@ namespace ml
 	* \param  ROI identifier, source image, drawing image
 	* \return coordinates of start and end points of average line and its angle wrt the image vertical
 	*/
-	void lineROI(int &roi_k, cv::Mat &imgBW, cv::Mat &imgViz, std::vector<std::vector<int> > &linePoints, std::vector<float> &lineAngles);
+	bool lineROI(int &roi_k, cv::Mat &imgBW, cv::Mat &imgViz, std::vector<std::vector<int> > &linePoints, std::vector<float> &lineAngles);
 
 
 	/*!

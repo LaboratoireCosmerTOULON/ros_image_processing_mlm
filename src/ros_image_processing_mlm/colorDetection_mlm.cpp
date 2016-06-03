@@ -209,15 +209,18 @@ namespace ml
 		cannyDetector(imgSrc, imgMap);	// retrives a binary image with contours of orange spots
 
 		/* Perform line detection */
-		int roi_k; // roi counter (from 0 to 3)
+		// Initialize variavles
+		int roi_k; // roi counter
+		bool seek; // keep seeking for rope 
 		std::vector<std::vector<int> > linePoints;	// point coordinates of the segemented line
 		std::vector<float> lineAngles;				// anlges of the segemented line
-	
 		// find line in ROIs
-		roi_k = 0; 	std::cout<<std::endl<<"Start line detector"<<std::endl;
+		roi_k = 0;
+		seek  = true; 
+		std::cout<<std::endl<<"Start line detector"<<std::endl;
 		while(roi_k < 4)
 		{
-			lineROI(roi_k, imgMap, imgViz, linePoints, lineAngles);
+			seek = lineROI(roi_k, imgMap, imgViz, linePoints, lineAngles);
 			roi_k++;
 		}
 		if(linePoints.size() > 0)	// if some line was found, save it
@@ -238,7 +241,7 @@ namespace ml
 		}
 
 		// rotate image back to original position for right visualization
-		imgViz = rotateImg(imgViz, -90);
+		//imgViz = rotateImg(imgViz, -90);
 	}
 
 
@@ -298,35 +301,49 @@ namespace ml
 	* \param  ROI identifier, source BW image, drawing image
 	* \return coordinates of start and end points of average line and its angle wrt the image vertical axis
 	*/
-	void lineROI(int &roi_k, cv::Mat &imgBW, cv::Mat &imgViz, std::vector<std::vector<int> > &linePoints, std::vector<float> &lineAngles)
+	bool lineROI(int &roi_k, cv::Mat &imgBW, cv::Mat &imgViz, std::vector<std::vector<int> > &linePoints, std::vector<float> &lineAngles)
 	{
-		cv::Rect roi;		//roi where will be performed the line detection
-		int dh, dw;			// roi size
-		dw = 120; dh = 120;	// standard roi size
+
+		/* Initialize variables */
+		// For roi creation
+		cv::Rect roi;	//roi where will be performed the line detection
+		int dh, dw;		// roi height and width (Attention, the image was rotated by 90 deg)
+		bool seek;		// keep seeking for rope
+		// For Hough line detection
+		int minLineLength;	// Minimum line length. Line segments shorter than that are rejected
+		int maxLineGap;		// Maximum allowed gap between points on the same line to link them
 
 		std::cout<<"roi_k"<<roi_k<<std::endl;
 
 		/* Create roi where rope will be detected */
 		if (roi_k == 0)	// if first roi, create a fixed window on image top
 		{
-			dw	= 120; dh = 320;											// standard size of first roi
-			roi	= cv::Rect(0, 0.5*imgBW.rows-0.5*dh, dw, dh); 
+			minLineLength = 50;
+			maxLineGap = 20;
+			dw = 120;
+			dh = 320;
+			roi	= cv::Rect(0, 0.5*imgBW.rows-0.5*dh, dw, dh); // create roi (Attention, the image was rotated) 
 			cv::rectangle(imgViz, roi, cv::Scalar( 0, 55, 255 ), +1, 4 );	// draw roi
 			std::cout<<"roi0draw"<<std::endl;
 		}
 		else // the others roi are mobile windows with location depending on last rope segment position
 		{
-
+			minLineLength = 10;
+			maxLineGap = 5;
+			dw = 50;
+			dh = 50;
 			// control roi overflow for others roi
 			if(linePoints[roi_k-1][3] + 0.5*dh > imgBW.rows)
 			{
 				std::cout<<"if1"<<std::endl;
 				roi = cv::Rect(linePoints[roi_k-1][2], linePoints[roi_k-1][3], dw, imgBW.rows - linePoints[roi_k-1][3]);
+				seek = false;
 			}
 			else if(linePoints[roi_k-1][3] - 0.5*dh < 0)
 			{
 				std::cout<<"if2"<<std::endl;
 				roi = cv::Rect(linePoints[roi_k-1][2], 0, dw, dh);
+				seek = false;
 			}
 			else
 			{
@@ -341,7 +358,7 @@ namespace ml
 		/* Perform rope detection in roi through Hough algorithm. The rope is modeled by a segment in the roi */
 		std::vector<cv::Vec4i> lines;	// vector for line points storage
 		std::cout<<"hough"<<std::endl;
-		HoughLinesP(imgBW(roi), lines, 1, CV_PI/180, 50, 50, 20 ); 
+		HoughLinesP(imgBW(roi), lines, 1, CV_PI/180, 50, minLineLength, maxLineGap ); 
 		std::cout<<"hough"<<std::endl;
 		std::cout<<"hough # lines: "<<lines.size()<<std::endl;
 
@@ -368,6 +385,7 @@ namespace ml
 			else{roi_k = 4;}// if no useful line was found, stop seeking for line...
 		}
 		else{roi_k = 4;}// if no line was found by Hough, stop seeking for line...
+	return seek;
 	}
 
 
