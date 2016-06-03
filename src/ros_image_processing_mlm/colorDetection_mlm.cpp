@@ -14,15 +14,15 @@ namespace ml
 {
 	/*!
 	* author : Matheus Laranjeira
-	* date   : 06/2016
+	* date   : 03/06/2016
 	* 
-	* \brief detects orange contours with canny edge detector and image color segmentation in HSV space
-	* \param contours, contour set of countour points grouped by connexity (see opencv findContour fonction) 
+	* \brief  detects orange contours with canny edge detector and image color segmentation in HSV space
+	* \param  source image
 	* \return a binary image imgMap with detected orange spots
 	*/
 	void cannyDetector(cv::Mat src, cv::Mat &imgMap)
 	{
-		/** Initialize variables **/
+		/* Initialize variables */
 		// Matrix and vectors for image processing and contours detection
 		cv::Mat srcGray, srcHsv, cannyOutput;
 		std::vector<std::vector<cv::Point> > contours;
@@ -37,7 +37,7 @@ namespace ml
 		int h_min = 0;	// minimum hue
 		int h_max = 10;	// maximum hue
 
-		/** Perform contour detection with Canny **/
+		/* Perform contour detection with Canny **/
 		cv::cvtColor(src, srcGray, cv::COLOR_BGR2GRAY);	// from color to gray					
 		cv::blur( srcGray, srcGray, cv::Size(3,3) ); 	// blur image to reduce noise before Canny detector
 		cv::Canny( srcGray, cannyOutput, lowThreshold, lowThreshold*ratio, kernel_size );
@@ -193,41 +193,41 @@ namespace ml
 	* author : Matheus Laranjeira
 	* date   : 03/2016
 	* 
-	* \brief detects an orange rope in a given image
+	* \brief detects an orange rope by dividing the source image in successive ROIs.
 	* \param  an opencv image
 	* \return the angle alpha between the image vertical and the rope top part and the line bottom end
 	*/
 	void lineDetector(cv::Mat imgSrc, cv::Mat &imgViz, float &alpha, float &lineEnd)
 	{
 		
-		// Image rotation needed for hough detection
-		imgSrc = rotateImg(imgSrc, 90); // source
+		/* Prepare source and redering images for processing */
+		imgSrc = rotateImg(imgSrc, 90);	// image rotation needed for hough detection
 		cv::Mat imgMap  = cv::Mat::zeros( imgSrc.size(), imgSrc.type() );
-		imgViz = imgSrc.clone(); // visualization post-processing
+		imgViz = imgSrc.clone(); 		// visualization post-processing
 
 		/* Perform colored contours detection with Canny */
-		cannyDetector(imgSrc, imgMap); // retrives a binary image with contours of orange spots
+		cannyDetector(imgSrc, imgMap);	// retrives a binary image with contours of orange spots
 
-		// parameters of line
+		/* Perform line detection */
 		int roi_k; // roi counter (from 0 to 3)
-		std::vector<std::vector<int> > linePoints; // point coordinates of the segemented line
-		std::vector<float> lineAngles; // anlges of the segemented line
+		std::vector<std::vector<int> > linePoints;	// point coordinates of the segemented line
+		std::vector<float> lineAngles;				// anlges of the segemented line
 	
-		// find line in ROI
+		// find line in ROIs
 		roi_k = 0; 	std::cout<<std::endl<<"Start line detector"<<std::endl;
 		while(roi_k < 4)
 		{
 			lineROI(roi_k, imgMap, imgViz, linePoints, lineAngles);
 			roi_k++;
 		}
-		if(linePoints.size() > 0) // print line found
+		if(linePoints.size() > 0)	// if some line was found, save it
 		{
 			std::cout<<"Printing lines angles ending points... "<<std::endl;
 			for(int i = 0; i < linePoints.size(); i++){
 				std::cout<<"Line "<<i<<": "<<linePoints[i][2]<<" "<<linePoints[i][3]<<" "<<std::endl;
 				std::cout<<"Angle "<<i<<": "<<lineAngles[i]<<std::endl;
 			}
-			alpha = lineAngles[0];
+			alpha = lineAngles[0];	// save angle of first line segment wrt image vertical axis
 			lineEnd = linePoints[linePoints.size() - 1][2];
 		}
 		else
@@ -239,7 +239,6 @@ namespace ml
 
 		// rotate image back to original position for right visualization
 		imgViz = rotateImg(imgViz, -90);
-
 	}
 
 
@@ -249,26 +248,31 @@ namespace ml
 	* 
 	* \brief given a set of lines detected by the hough transform, calculate best line (average line) points
 	* \param  an ROI of an opencv image, vector of hough lines
-	* \return coordinates of start and end points of average line
+	* \return coordinates of start and end points of average line and integer (0 echec, 1 success)
 	*/
 	int lineParam(cv::Mat imgBW, cv::Rect roi, std::vector<cv::Vec4i> lines, int &p1x, int &p1y, int &p2x, int &p2y)
 	{
+		/* Declare variables */
 		int p1x_acc, p1y_acc, p2x_acc, p2y_acc;
-		p1x_acc=0; p1y_acc=0; p2x_acc=0; p2y_acc=0;
-		p1x=0; p1y=0; p2x=0; p2y=0;
-		int k = 0;
+		p1x_acc=0; p1y_acc=0; p2x_acc=0; p2y_acc=0; // accumulator for calculate mean line
+		p1x=0; p1y=0; p2x=0; p2y=0; 				// mean line starting and end point coordinates
+		int k = 0;									// counter of useful lines
+
 		std::cout<<"ROI: "<<roi.x<<" "<<roi.x+roi.width<<" "<<" "<<roi.y<<" "<<roi.y+roi.height<<" "<<std::endl;
 		std::cout<<"Printing all hough lines... "<<std::endl;
 
-		// calculate average line
+		/* Calculate average position of lines */
 		for( size_t i = 0; i < lines.size(); i++ )
 		{
 			cv::Vec4i l = lines[i];
 			std::cout<<"line"<<i<<": "<<l[0]<<" "<<l[1]<<" "<<l[2]<<" "<<l[3]<<std::endl;
-			if (l[0] < l[2] && l[0] < 30) //select vertical lines that start on image top
+			if (l[0] < l[2] && l[0] < 30) // calculate mean only for vertical lines that start on image top
 			{
-				p1x_acc = p1x_acc + l[0] + roi.x; p1y_acc = p1y_acc+ l[1] + roi.y; p2x_acc = p2x_acc + l[2] + roi.x; p2y_acc = p2y_acc+ l[3]+roi.y;
 				cv::line(imgBW, cv::Point (l[0] + roi.x,l[1] + roi.y), cv::Point(l[2] + roi.x,l[3] + roi.y), cv::Scalar(0, 255, 0), 2, 8); //draw line
+				p1x_acc = p1x_acc + l[0] + roi.x;
+				p1y_acc = p1y_acc+ l[1] + roi.y;
+				p2x_acc = p2x_acc + l[2] + roi.x;
+				p2y_acc = p2y_acc+ l[3]+roi.y;
 				k++;
 			}
 		}
@@ -283,26 +287,28 @@ namespace ml
 	* 
 	* \brief  detects lines in a given ROI using hough transformation
 	* \param  ROI identifier, source BW image, drawing image
-	* \return coordinates of start and end points of average line and its angle wrt the image vertical
+	* \return coordinates of start and end points of average line and its angle wrt the image vertical axis
 	*/
 	void lineROI(int &roi_k, cv::Mat &imgBW, cv::Mat &imgViz, std::vector<std::vector<int> > &linePoints, std::vector<float> &lineAngles)
 	{
-		cv::Rect roi; //roi where line will be detected
-		int dh, dw;	// roi size
-		dw = 120; dh = 120;
+		cv::Rect roi;		//roi where will be performed the line detection
+		int dh, dw;			// roi size
+		dw = 120; dh = 120;	// standard roi size
 
 		std::cout<<"roi_k"<<roi_k<<std::endl;
 
-		//create roi
-		if (roi_k == 0)
-		{	// the first roi is a fixed window
-			dw = 120; dh = 320;
-			roi = cv::Rect(0, 0.5*imgBW.rows-0.5*dh, dw, dh); 
-			cv::rectangle(imgViz, roi, cv::Scalar( 0, 55, 255 ), +1, 4 ); // draw roi
+		/* Create roi where rope will be detected */
+		if (roi_k == 0)	// if first roi, create a fixed window on image top
+		{
+			dw	= 120; dh = 320;											// standard size of first roi
+			roi	= cv::Rect(0, 0.5*imgBW.rows-0.5*dh, dw, dh); 
+			cv::rectangle(imgViz, roi, cv::Scalar( 0, 55, 255 ), +1, 4 );	// draw roi
 			std::cout<<"roi0draw"<<std::endl;
 		}
-		else
-		{// control roi overflow for others roi
+		else // the others roi are mobile windows with location depending on last rope segment position
+		{
+
+			// control roi overflow for others roi
 			if(linePoints[roi_k-1][3] + 0.5*dh > imgBW.rows)
 			{
 				std::cout<<"if1"<<std::endl;
@@ -319,30 +325,29 @@ namespace ml
 				roi = cv::Rect(linePoints[roi_k-1][2], linePoints[roi_k-1][3] - 0.5*dh, dw, dh);
 			}
 			std::cout<<"roidraw"<<std::endl;
-			cv::rectangle(imgViz, roi, cv::Scalar( 0, 255, 0 ), +1, 4 );
+			cv::rectangle(imgViz, roi, cv::Scalar( 0, 255, 0 ), +1, 4 );	// draw roi
 			std::cout<<"roidraw"<<std::endl;
 		}
 
-		// line detection by Hough algorithm
-		std::vector<cv::Vec4i> lines; // create vector for line points storage
+		/* Perform rope detection in roi through Hough algorithm. The rope is modeled by a segment in the roi */
+		std::vector<cv::Vec4i> lines;	// vector for line points storage
 		std::cout<<"hough"<<std::endl;
 		HoughLinesP(imgBW(roi), lines, 1, CV_PI/180, 50, 50, 20 ); 
 		std::cout<<"hough"<<std::endl;
 		std::cout<<"hough # lines: "<<lines.size()<<std::endl;
 
-		if (lines.size() > 0)
+		if (lines.size() > 0) // if some lines are detected, calculate best line (average line for while...)
 		{
-			// calculate best line (average line for while...)
-			int p1x, p1y, p2x, p2y; // points of line average
+			int p1x, p1y, p2x, p2y; // points of mean line
 			if (lineParam(imgViz, roi, lines, p1x, p1y, p2x, p2y) > 0) // if a useful line was found...
 			{
-				float alpha = 999; //if no line is detected, alpha=999
+				float alpha = 999; // default value of alpha
 				std::vector<int> linerow;
 				linerow.push_back(p1x); linerow.push_back(p1y); linerow.push_back(p2x); linerow.push_back(p2y);
 				std::cout<<"linerow"<<" "<<linerow[0]<<" "<<linerow[1]<<" "<<linerow[2]<<" "<<linerow[3]<<" "<<std::endl;
-				linePoints.push_back(linerow); // save average line points in vector linePoints
+				linePoints.push_back(linerow);	// save average line points in vector linePoints
 				alpha =  atan((float)(p2y-p1y)/(p2x-p1x)); // calculate angle with vertical
-				lineAngles.push_back(alpha); // save angle in vector lineAngles
+				lineAngles.push_back(alpha);	// save angle in vector lineAngles
 				std::cout<<"Angle"<<roi_k<<": "<< alpha*(180/3.1416) <<std::endl; //print angle
 				cv::line(imgViz, cv::Point (p1x,p1y), cv::Point(p2x,p2y), cv::Scalar(0, 0, 255), 2, 8); //draw mean line
 				std::cout<<"Printing average line in roi "<<roi_k<<std::endl;
