@@ -257,6 +257,7 @@ namespace ml
 		p1x_acc=0; p1y_acc=0; p2x_acc=0; p2y_acc=0; // accumulator for calculate mean line
 		p1x=0; p1y=0; p2x=0; p2y=0; 				// mean line starting and end point coordinates
 		int k = 0;									// counter of useful lines
+		cv::Point pline_o, pline_f;					// cvPoint for drawing lines
 
 		std::cout<<"ROI: "<<roi.x<<" "<<roi.x+roi.width<<" "<<" "<<roi.y<<" "<<roi.y+roi.height<<" "<<std::endl;
 		std::cout<<"Printing all hough lines... "<<std::endl;
@@ -268,15 +269,23 @@ namespace ml
 			std::cout<<"line"<<i<<": "<<l[0]<<" "<<l[1]<<" "<<l[2]<<" "<<l[3]<<std::endl;
 			if (l[0] < l[2] && l[0] < 30) // calculate mean only for vertical lines that start on image top
 			{
-				cv::line(imgBW, cv::Point (l[0] + roi.x,l[1] + roi.y), cv::Point(l[2] + roi.x,l[3] + roi.y), cv::Scalar(0, 255, 0), 2, 8); //draw line
-				p1x_acc = p1x_acc + l[0] + roi.x;
-				p1y_acc = p1y_acc+ l[1] + roi.y;
-				p2x_acc = p2x_acc + l[2] + roi.x;
-				p2y_acc = p2y_acc+ l[3]+roi.y;
+				pline_o = cv::Point (l[0] + roi.x, l[1] + roi.y);	// line initial point
+				pline_f = cv::Point (l[2] + roi.x, l[3] + roi.y);	// line final point
+				cv::line(imgBW, pline_o, pline_f, cv::Scalar(0, 255, 0), 2, 8);			//draw line
+				p1x_acc = p1x_acc + pline_o.x;
+				p1y_acc = p1y_acc + pline_o.y;
+				p2x_acc = p2x_acc + pline_f.x;
+				p2y_acc = p2y_acc + pline_f.y;
 				k++;
 			}
 		}
-		if (k != 0){p1x = p1x_acc/k; p1y = p1y_acc/k; p2x = p2x_acc/k; p2y = p2y_acc/k;} // if k != 0 compute mean points
+		if (k != 0) // if some line was found useful, compute mean points
+		{
+			p1x = p1x_acc/k; // line initial point_x
+			p1y = p1y_acc/k; // line initial point_y
+			p2x = p2x_acc/k; // line end point_x
+			p2y = p2y_acc/k; // line end point_y
+		} 
 		return k;
 	}
 
