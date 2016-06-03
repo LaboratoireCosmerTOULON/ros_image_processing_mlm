@@ -35,7 +35,6 @@ catkin_package(
 ###########
 ## Build ##
 ###########
-
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 # include_directories(include)
@@ -50,6 +49,15 @@ add_library(ros_image_processing_mlm
   include/${PROJECT_NAME}/colorDetection_mlm.hpp
   src/${PROJECT_NAME}/colorDetection_mlm.cpp
  )
+
+#############
+## Install ##
+#############
+## Install project namespaced headers
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.hpp"
+  PATTERN ".svn" EXCLUDE)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
