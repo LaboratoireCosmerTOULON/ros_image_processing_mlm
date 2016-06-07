@@ -39,6 +39,22 @@ namespace ml
 
 	/*!
 	* author : Matheus Laranjeira
+	* date   : 06/06/2016
+	* 
+	* \brief create ROI where rope should be detected
+	* \param roi
+	* \return roi created. If roi.height = 0 or roi.width = 0, stop seeking for rope
+	*/
+	void createROI( cv::Mat imgBW,
+					std::vector<std::vector<int> > linePoints,
+					cv::Mat &imgViz,
+					int &minLineLength,
+					int &maxLineGap,
+					std::vector<cv::Rect> &roi );
+
+
+	/*!
+	* author : Matheus Laranjeira
 	* date   : 03/2016
 	* 
 	* \brief find the non oriented bounding boxe that fits with the larger area contour
@@ -83,7 +99,7 @@ namespace ml
 	* \param  an opencv image
 	* \return the angle alpha between the image vertical and the rope top part and the line bottom end
 	*/
-	void lineDetector(cv::Mat img, cv::Mat &imgViz, float &alpha, float &lineEnd);
+	void lineDetector(cv::Mat img, cv::Mat &imgMap, cv::Mat &imgViz, float &alpha, float &lineEnd);
 
 
 	/*!
@@ -105,8 +121,11 @@ namespace ml
 	* \param  ROI identifier, source image, drawing image
 	* \return coordinates of start and end points of average line and its angle wrt the image vertical
 	*/
-	bool lineROI(int &roi_k, cv::Mat &imgBW, cv::Mat &imgViz, std::vector<std::vector<int> > &linePoints, std::vector<float> &lineAngles);
-
+	bool lineROI(	cv::Mat imgBW,
+					std::vector<cv::Rect> &roi,
+					cv::Mat &imgViz,
+					std::vector<std::vector<int> > &linePoints,
+					std::vector<float> &lineAngles );
 
 	/*!
 	* author : Matheus Laranjeira
