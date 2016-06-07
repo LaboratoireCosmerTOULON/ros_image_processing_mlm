@@ -1,13 +1,3 @@
-#include <ros/ros.h>
-#include <image_transport/image_transport.h>
-#include <geometry_msgs/TwistStamped.h>
-#include <math.h>
-#include <vector>
-
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <cv_bridge/cv_bridge.h>
-
 #include <ros_image_processing_mlm/colorDetection_mlm.hpp>
 
 namespace ml
@@ -282,7 +272,7 @@ namespace ml
 		cannyDetector(imgSrc, imgMap);	// retrives a binary image with contours of orange spots
 
 		/* Perform line detection */
-		// Initialize variavles
+		// Initialize variables
 		std::vector<cv::Rect> roi;					// vector containing ROIs where the rope should be detected 
 		std::vector<std::vector<int> > linePoints;	// point coordinates of the segemented line
 		std::vector<float> lineAngles;				// anlges of the segemented line
@@ -419,6 +409,64 @@ namespace ml
 		}
 		return seek;
 	}
+
+
+	/*!
+	* author : Matheus Laranjeira
+	* date   : 03/06/2016
+	* 
+	* \brief retrieve the rope pixel coordinates
+	* \param  an opencv image
+	* \return the angle alpha between the image vertical and the rope top part and the line bottom end
+	*/
+	void ropePixelCoordinates(cv::Mat imgSrc, cv::Mat &imgMap, cv::Mat &imgViz)
+	{
+		
+		/* Prepare source and redering images for processing */
+		imgSrc = rotateImg(imgSrc, 90);	// image rotation needed for hough detection
+		imgMap  = cv::Mat::zeros( imgSrc.size(), imgSrc.type() );
+		imgViz = imgSrc.clone(); 		// visualization post-processing
+
+		/* Perform colored contours detection with Canny */
+		cannyDetector(imgSrc, imgMap);	// retrives a binary image with contours of orange spots
+
+		/* Perform line detection */
+		// Initialize variables
+		std::vector<cv::Rect> roi_vec;					// vector containing ROIs where the rope should be detected 
+		std::vector<std::vector<int> > linePoints;	// point coordinates of the segemented line
+		std::vector<float> lineAngles;				// anlges of the segemented line
+		bool seek = true;							// flag to keep seeking for rope in current ROI
+		// find line in ROIs
+		std::cout<<std::endl<<"Start line detector"<<std::endl;
+		while( seek == true )
+		{
+			seek = lineROI(imgMap, roi_vec, imgViz, linePoints, lineAngles);
+		}
+
+		/* Retrieve rope pixel coordinates */
+		std::vector<cv::Point> locations;	// output, locations of non-zero pixels in image
+		std::vector<cv::Point> loc_roi;		// output, locations of non-zero pixels in current roi
+		std::cout<<std::endl<<"Print rope coordinates"<<std::endl;
+
+		cv::Mat imgRope = cv::Mat::zeros( imgMap.size(), imgMap.type() );
+		for(int i = 0; i < roi_vec.size()-1; i++)
+		{
+			cv::findNonZero(imgMap(roi_vec[i]), loc_roi);
+			for(int j = 0; j < loc_roi.size(); j++)
+			{
+				loc_roi[j].x = loc_roi[j].x + roi_vec[i].x;
+				loc_roi[j].y = loc_roi[j].y + roi_vec[i].y;
+				locations.push_back(loc_roi[j]);
+				imgRope.at<unsigned char>(locations.back().y,locations.back().x) = 255;
+
+			}
+			std::cout<<std::endl<<"locations"<<i<<" "<<locations.size()<<std::endl;			
+		}
+		// rotate image back to original position for right visualization
+		imgViz = rotateImg(imgViz, -90);
+		imgMap = rotateImg(imgRope, -90);
+	}
+
 
 
 	/*!

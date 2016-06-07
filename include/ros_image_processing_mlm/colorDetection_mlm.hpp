@@ -136,5 +136,16 @@ namespace ml
 	* \return a set of closed contours  
 	*/
 	cv::Mat rotateImg (cv::Mat src, int angle);
+
+
+	/*!
+	* author : Matheus Laranjeira
+	* date   : 03/06/2016
+	* 
+	* \brief retrieve the rope pixel coordinates
+	* \param  an opencv image
+	* \return the angle alpha between the image vertical and the rope top part and the line bottom end
+	*/
+	void ropePixelCoordinates(cv::Mat imgSrc, cv::Mat &imgMap, cv::Mat &imgViz);
 }
 #endif
