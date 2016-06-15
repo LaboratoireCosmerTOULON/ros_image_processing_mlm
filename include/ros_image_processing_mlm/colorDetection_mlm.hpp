@@ -1,10 +1,6 @@
 #ifndef COLORDETECTION_MLM_HPP
 #define COLORDETECTION_MLM_HPP
 
-
-#include <ros/ros.h>
-#include <image_transport/image_transport.h>
-#include <geometry_msgs/TwistStamped.h>
 #include <math.h>
 #include <vector>
 
@@ -143,11 +139,11 @@ namespace ml
 	* author : Matheus Laranjeira
 	* date   : 03/06/2016
 	* 
-	* \brief retrieve the rope pixel coordinates
-	* \param  an opencv image
-	* \return the angle alpha between the image vertical and the rope top part and the line bottom end
+	* \brief  retrieve the rope pixel coordinates
+	* \param  an opencv image source
+	* \return processed images for visualizations and pixel coordinates of detected rope
 	*/
-	void ropePixelCoordinates(cv::Mat imgSrc, cv::Mat &imgMap, cv::Mat &imgViz);
+	void ropePixelCoordinates(cv::Mat imgSrc, cv::Mat &imgMap, cv::Mat &imgViz, std::vector<cv::Point> &locations);
 
 
 	/*!

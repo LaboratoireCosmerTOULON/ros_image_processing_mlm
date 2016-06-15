@@ -394,8 +394,8 @@ namespace ml
 		{
 			cv::Vec4i l = lines[i]; // extract line from vector of lines 
 			std::cout<<"line"<<i<<": "<<l[0]<<" "<<l[1]<<" "<<l[2]<<" "<<l[3]<<std::endl;
-			pline_o = cv::Point (l[0] + roi.x, l[1] + roi.y);	// line initial point
-			pline_f = cv::Point (l[2] + roi.x, l[3] + roi.y);	// line final point
+			pline_o = cv::Point(l[0] + roi.x, l[1] + roi.y);	// line initial point
+			pline_f = cv::Point(l[2] + roi.x, l[3] + roi.y);	// line final point
 			cv::line(imgBW, pline_o, pline_f, cv::Scalar(0, 255, 0), 2, 8);			//draw line
 			p1x_acc = p1x_acc + pline_o.x;
 			p1y_acc = p1y_acc + pline_o.y;
@@ -467,7 +467,7 @@ namespace ml
 
 			/* Plot and print */
 			std::cout<<"Angle"<<roi.size()<<": "<< alpha*(180/3.1416) <<std::endl; //print angle
-			cv::line(imgViz, cv::Point (p1x,p1y), cv::Point(p2x,p2y), cv::Scalar(0, 0, 255), 2, 8); //draw mean line
+			cv::line(imgViz, cv::Point(p1x,p1y), cv::Point(p2x,p2y), cv::Scalar(0, 0, 255), 2, 8); //draw mean line
 			std::cout<<"Printing average line in roi "<<roi.size()-1<<std::endl;
 			for(int i = roi.size()-1; i < roi.size(); i++)
 			{
@@ -486,10 +486,10 @@ namespace ml
 	* date   : 03/06/2016
 	* 
 	* \brief  retrieve the rope pixel coordinates
-	* \param  an opencv image
-	* \return the angle alpha between the image vertical and the rope top part and the line bottom end
+	* \param  an opencv image source
+	* \return processed images for visualizations and pixel coordinates of detected rope
 	*/
-	void ropePixelCoordinates(cv::Mat imgSrc, cv::Mat &imgMap, cv::Mat &imgViz)
+	void ropePixelCoordinates(cv::Mat imgSrc, cv::Mat &imgMap, cv::Mat &imgViz, std::vector<cv::Point> &locations)
 	{
 		
 		/* Prepare source and redering images for processing */
@@ -512,13 +512,13 @@ namespace ml
 			seek = lineROI(imgMap, roi_vec, imgViz, linePoints, lineAngles);
 		}
 
+		/* Create a roi bounding the rope */
 		ropeROI(linePoints, roi_vec);
 
 		/* Retrieve rope pixel coordinates */
-		std::vector<cv::Point> locations;	// output, locations of non-zero pixels in image
 		std::vector<cv::Point> loc_roi;		// output, locations of non-zero pixels in current roi
 		std::cout<<std::endl<<"Print rope coordinates"<<std::endl;
-
+		// retieve non-zero pixels inside the rois
 		cv::Mat imgRope = cv::Mat::zeros( imgMap.size(), imgMap.type() );
 		for(int i = 0; i < roi_vec.size()-1; i++)
 		{
@@ -529,16 +529,14 @@ namespace ml
 				loc_roi[j].y = loc_roi[j].y + roi_vec[i].y;
 				locations.push_back(loc_roi[j]);
 				imgRope.at<unsigned char>(locations.back().y,locations.back().x) = 255;
-
 			}
 		}
-
-		// plot roi_vec in BW image
+		// plot roi_vec in BW image APAGAR DEPOIS
 		for(int i = 0; i < roi_vec.size(); i++)
 		{
 			cv::rectangle(imgMap, roi_vec[i], cv::Scalar(255, 255, 255 ), +1, 4 );	// draw roi
 		}
-
+		imgMap = imgRope.clone();
 	}
 
 
@@ -552,6 +550,9 @@ namespace ml
 	*/
 	void ropeROI(std::vector<std::vector<int> > linePoints, std::vector<cv::Rect> &roi_vec)
 	{
+		// A COMPLETAR AINDA...
+		// clear original roi_vec
+
 		/* Create roi that encloses the detected line points */
 		cv::Rect roi;
 		int po_x, po_y, pf_x, pf_y;
