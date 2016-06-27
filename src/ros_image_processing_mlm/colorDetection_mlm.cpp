@@ -96,7 +96,7 @@ namespace ml
 	* \return roi created. If roi.height = 0 or roi.width = 0, stop seeking for rope
 	*/
 	void createROI( std::vector<std::vector<int> > linePoints,
-					cv::Mat &imgBW,
+					std::vector<float> lineAngles,
 					cv::Mat &imgViz,
 					int &minLineLength,
 					int &maxLineGap,
@@ -111,12 +111,12 @@ namespace ml
 		if (roi.empty())	// if first roi, create a fixed window on image top
 		{
 			// Set roi height and width
-			dw = 0.25*imgBW.cols;
+			dw = 0.25*imgViz.cols;
 			dh = 30;
 			// Set hough line detection parameters for rope detection in image top roi
 			minLineLength = floor(0.5*sqrt(2)*dh);
-			maxLineGap = floor(0.5*dh);
-			roi.push_back( cv::Rect(0.5*imgBW.cols-0.5*dw, 0, dw, dh) ); // create roi (Attention, the image was rotated) 
+			maxLineGap = floor(0.1*dh);
+			roi.push_back( cv::Rect(0.5*imgViz.cols-0.5*dw, 0, dw, dh) ); // create roi (Attention, the image was rotated) 
 			cv::rectangle(imgViz, roi.back(), cv::Scalar( 0, 55, 255 ), +1, 4 );	// draw roi
 			std::cout<<"roi0draw"<<std::endl;
 		}
@@ -128,17 +128,17 @@ namespace ml
 			minLineLength = floor(0.1*sqrt(2)*dh);
 			maxLineGap = floor(0.75*dh);
 			// Control roi overflow
-			if(linePoints.back()[3] + dh > imgBW.rows)			// overflow by bottom
+			if(linePoints.back()[3] + 0.75*dh > imgViz.rows)			// overflow by bottom
 			{
 				std::cout<<"if1"<<std::endl;
 				roi.push_back( cv::Rect(0, 0, 0, 0) ); 
 			}
-			else if(linePoints.back()[3] - 0*dh < 0) 			// overflow by top
+			else if(linePoints.back()[3] - 0.25*dh < 0) 			// overflow by top
 			{
 				std::cout<<"if2"<<std::endl;
 				roi.push_back( cv::Rect(0, 0, 0, 0) );
 			}
-			else if(linePoints.back()[2] + 0.5*dw > imgBW.cols) // overflow by right
+			else if(linePoints.back()[2] + 0.5*dw > imgViz.cols) // overflow by right
 			{
 				std::cout<<"if3"<<std::endl;
 				roi.push_back( cv::Rect(0, 0, 0, 0) );
@@ -151,7 +151,7 @@ namespace ml
 			else
 			{
 				std::cout<<"if5"<<std::endl;
-				roi.push_back( cv::Rect(linePoints.back()[2] - 0.5*dw, linePoints.back()[3] - 0*dh, dw, dh) );
+				roi.push_back( cv::Rect(linePoints.back()[2] - 0.5*dw, linePoints.back()[3] - 0.25*dh, dw, dh) );
 				std::cout<<"roidraw"<<std::endl;
 				cv::rectangle(imgViz, roi.back(), cv::Scalar( 0, 255, 0 ), +1, 4 );	// draw roi
 				std::cout<<"roidraw"<<std::endl;
@@ -251,6 +251,24 @@ namespace ml
 		return contours;	
 	}
 
+	/*!
+	* author : Matheus Laranjeira
+	* date   : 27/06/2016
+	* 
+	* \brief  calculates the angle of the segment of line 'bline' wrt image vertical
+	* \param  bline : vector containing start and end point of a segment of line
+	* \return the angle alpha between the segment of line 'bline' and the image vertical
+	*/
+	float lineAngle(std::vector<int> bline)
+	{
+		int p1x = bline[0];
+		int p1y = bline[1];
+		int p2x = bline[2];
+		int p2y = bline[3];
+		float alpha =  atan((float)(p2x - p1x)/(p2y - p1y)); // calculate angle with vertical
+		return alpha;
+	}
+
 
 	/*!
 	* author : Matheus Laranjeira
@@ -314,56 +332,45 @@ namespace ml
 	* \param  vector of lines representing segmented rope
 	* \return the segment to be added to the vector of lines with right direction
 	*/
-	void lineDirection(std::vector<std::vector<int> > linePoints, std::vector<float> lineAngles, std::vector<int> &bline)
+	void lineDirection(std::vector<float> lineAngles, std::vector<int> &bline)
 	{
 
-		std::cout<<"lineDirection1"<<std::endl;
-		/* Extract current segment of line coordinate */
-		int p1x, p1y, p2x, p2y; // points of bline
+		/* Invert segment direction
+		 * The direction of detected segments from the hough transform is from image left from image rigth
+		 * However, when the rope has a negative angle with the image vertical, the direction of the rope segments is from right to lefht,
+		 * since the rope is in the image left side. A direction inversion is hence needed 
+		*/
+
+		// Extract current segment of line coordinate
+		int p1x, p1y, p2x, p2y;
 		p1x = bline[0];
 		p1y = bline[1];
 		p2x = bline[2];
 		p2y = bline[3];
 
-		/* If the current segment is the first one, it direction is necessarily top down */
-		if(linePoints.size() == 0 && p2y < p1y)
+		float angle = lineAngles[0];
+		// If the current segment is the first one, its direction is necessarily top down
+		if(lineAngles.size() < 6 && p2y < p1y)
 		{
 			// if wrong direction ( p2y < p1y ), invert direction of segment it
-		std::cout<<"lineDirection2"<<std::endl;
 			bline.clear();
-		std::cout<<"lineDirection3"<<std::endl;
 			bline.push_back(p2x);
 			bline.push_back(p2y);
 			bline.push_back(p1x);
 			bline.push_back(p1y);
-		std::cout<<"lineDirection4"<<std::endl;
-			
 		}
-		else if(linePoints.size() > 0)
+		else if( angle < 0.0 )
 		{
-			/* if there are predecessors segments, the right direction is: new line begins near to predecessor end */
-			std::vector<int> l = linePoints.back(); // retrieve predecessor line
-			// predecessor line end coordinates
-			int lend_x = l[2];
-			int lend_y = l[3];
-			// calculate distance between points p1, p2 and predecessor end
-			int dx1 = lend_x - p1x;
-			int dy1 = lend_y - p1y;
-			int dx2 = lend_x - p2x;
-			int dy2 = lend_y - p2y;
-			int d1 = sqrt(pow(dx1,2) + pow(dy1,2));
-			int d2 = sqrt(pow(dx2,2) + pow(dy2,2));
-		std::cout<<"lineDirection5"<<std::endl;	
-			// if p1 is farther than p2 from predecessor end, invert direction of segment
-			if(d1 > d2)
-			{
-		std::cout<<"lineDirection6"<<std::endl;	
-				bline.clear(); // Apagar... ou mudar depois
-				bline.push_back(p2x);
-				bline.push_back(p2y);
-				bline.push_back(p1x);
-				bline.push_back(p1y);
-			}		
+			// Inversion
+			bline[0]= bline[2];
+			bline[1]= bline[3];
+			bline[2]= p1x;
+			bline[3]= p1y;
+		}
+		std::cout<<"line direction "<<std::endl;
+		for(int i = 0; i < lineAngles.size(); i++)
+		{
+			std::cout<<"angle"<<i<<" "<<lineAngles[i]*180/3.1416<<std::endl;	
 		}
 	}
 
@@ -372,7 +379,7 @@ namespace ml
 	* author : Matheus Laranjeira
 	* date   : 03/06/2016
 	* 
-	* \brief given a set of lines detected by the hough transform, calculate best line (average line) points
+	* \brief  given a set of lines detected by the hough transform, calculate best line (average line) points
 	* \param  an ROI of an opencv image, vector of hough lines
 	* \return coordinates of start and end points of average line and integer (0 echec, 1 success)
 	*/
@@ -426,56 +433,63 @@ namespace ml
 					std::vector<cv::Rect> &roi,
 					cv::Mat &imgViz,
 					std::vector<std::vector<int> > &linePoints,
-					std::vector<float> &lineAngles )
+					std::vector<float> &angles )
 	{
 
 		std::cout<<std::endl<<"lineROI"<<std::endl;
+
 		/* Create ROI where rope detection will be performed */
 		// Parameters for line detection by Hough
 		int minLineLength;	// Minimum line length. Line segments shorter than that are rejected
 		int maxLineGap;		// Maximum allowed gap between points on the same line to link them
-		createROI(linePoints, imgBW, imgViz, minLineLength, maxLineGap, roi);
-		// printing roi...		
-		std::cout<<"ROI: "<<roi.back().x<<" "<<roi.back().x+roi.back().width <<" "
-						  <<roi.back().y<<" "<<roi.back().y+roi.back().height<<std::endl;
-		/* Perform rope detection in roi using Hough algorithm. The rope is modeled by a segment in the roi */
-		bool seek = false; // keep seeking for line only if some line is detected, otherwise stop
-		std::vector<cv::Vec4i> lines;	// vector for line points storage
-		if(roi.back().height > 0 ) // if non null roi was created, seek for lines in it
-		{
-			HoughLinesP(imgBW(roi.back()), lines, 1, CV_PI/180, 20, minLineLength, maxLineGap ); 
-			std::cout<<"hough # lines: "<<lines.size()<<std::endl;
-		}
-		/* Choose most representative line between all lines detected */
-		if(!lines.empty()) // if some lines are detected, calculate best line (average line for while...)
-		{
-			std::vector<int> bline; // most representative line
-			bestLine(imgViz, roi.back(), lines, bline);
-			std::cout<<"bestLine"<<std::endl;
-			lineDirection(linePoints, lineAngles, bline);
-			linePoints.push_back(bline);	// save average line points in vector linePoints
-			std::cout<<"bline"<<" "<<bline[0]<<" "<<bline[1]<<" "<<bline[2]<<" "<<bline[3]<<" "<<std::endl;
-			
-			/* Calculate line angle wrt vertical */
-			float alpha = 999; // default value of alpha
-			int p1x = bline[0];
-			int p1y = bline[1];
-			int p2x = bline[2];
-			int p2y = bline[3];
-			alpha =  atan((float)(p2y - p1y)/(p2x - p1x)); // calculate angle with vertical
-			lineAngles.push_back(alpha);	// save angle in vector lineAngles
+		bool seek = true; // keep seeking for line only if some line is detected, otherwise stop
 
-			/* Plot and print */
-			std::cout<<"Angle"<<roi.size()<<": "<< alpha*(180/3.1416) <<std::endl; //print angle
-			cv::line(imgViz, cv::Point(p1x,p1y), cv::Point(p2x,p2y), cv::Scalar(0, 0, 255), 2, 8); //draw mean line
-			std::cout<<"Printing average line in roi "<<roi.size()-1<<std::endl;
-			for(int i = roi.size()-1; i < roi.size(); i++)
+		while(seek == true && roi.size() < 50)
+		{
+			seek = false;
+			createROI(linePoints, angles, imgViz, minLineLength, maxLineGap, roi);
+			// printing roi...		
+			std::cout<<"ROI: "<<roi.back().x<<" "<<roi.back().x+roi.back().width <<" "
+							  <<roi.back().y<<" "<<roi.back().y+roi.back().height<<std::endl;
+
+			/* Perform rope detection in roi using Hough algorithm. The rope is modeled by a segment in the roi */
+			std::vector<cv::Vec4i> lines;	// vector for line points storage
+			if(roi.back().height > 0 ) // if non null roi was created, seek for lines in it
 			{
-				std::cout<<"Line"<<i<<": "
-						 <<linePoints[i][0]<<" "<<linePoints[i][1]<<" "<<linePoints[i][2]<<" "<<linePoints[i][3]<<" "<<std::endl;
+				HoughLinesP(imgBW(roi.back()), lines, 1, CV_PI/180, 20, minLineLength, maxLineGap ); 
+				std::cout<<"hough # lines: "<<lines.size()<<std::endl;
 			}
-			// keep seeking for rope since one more valid segment was found
-			seek = true;
+
+			/* Choose most representative line between all lines detected */
+			if(!lines.empty()) // if some lines are detected, calculate best line (average line for while...)
+			{
+				
+				/* Calculate most representative line (average line) */
+				std::vector<int> bline;
+				bestLine(imgViz, roi.back(), lines, bline);
+
+				/* Calculate line angle wrt vertical */
+				float alpha = 999; // default value of alpha
+				alpha = lineAngle(bline);
+				angles.push_back(alpha);	// save angle in vector angles
+
+				/* Correction of line Direction 
+				 * Direction from hough : from image left to rigth
+				 * Used direction : from image top to bottom 		*/
+				std::cout<<"bestLine"<<std::endl;
+				lineDirection(angles, bline);
+				linePoints.push_back(bline);	// save average line points in vector linePoints
+				std::cout<<"bline"<<" "<<bline[0]<<" "<<bline[1]<<" "<<bline[2]<<" "<<bline[3]<<" "<<std::endl;
+
+				/* Plot and print */
+				std::cout<<"Angle"<<roi.size()<<": "<< alpha*(180/3.1416) <<std::endl; //print angle
+				cv::line(imgViz, cv::Point(bline[0],bline[1]), cv::Point(bline[2],bline[3]), cv::Scalar(0, 0, 255), 2, 8); //draw mean line
+				std::cout<<"Printing average line in roi "<<roi.size()-1<<std::endl;
+				std::cout<<"Line"<<linePoints.size()<<": "
+						 <<linePoints.back()[0]<<" "<<linePoints.back()[1]<<" "<<linePoints.back()[2]<<" "<<linePoints.back()[3]<<" "<<std::endl;
+				// keep seeking for rope since one more valid segment was found
+				seek = true;
+			}
 		}
 		return seek;
 	}
@@ -504,20 +518,20 @@ namespace ml
 		std::vector<cv::Rect> roi_vec;				// vector containing ROIs where the rope should be detected 
 		std::vector<std::vector<int> > linePoints;	// point coordinates of the segemented line
 		std::vector<float> lineAngles;				// anlges of the segemented line
-		bool seek = true;							// flag to keep seeking for rope in current ROI
+
 		// find line in ROIs
 		std::cout<<std::endl<<"Start line detector"<<std::endl;
-		while( seek == true )
-		{
-			seek = lineROI(imgMap, roi_vec, imgViz, linePoints, lineAngles);
-		}
+		lineROI(imgMap, roi_vec, imgViz, linePoints, lineAngles);
 
 		/* Create a roi bounding the rope */
-		ropeROI(linePoints, roi_vec);
+		//ropeROI(linePoints, roi_vec);
 
 		/* Retrieve rope pixel coordinates */
 		std::vector<cv::Point> loc_roi;		// output, locations of non-zero pixels in current roi
-		std::cout<<std::endl<<"Print rope coordinates"<<std::endl;
+		std::cout<<"roi_vec size "<<roi_vec.size()<<std::endl;
+		std::cout<<"linePoints size "<<linePoints.size()<<std::endl;
+
+		std::cout<<"Print rope coordinates"<<std::endl;
 		// retieve non-zero pixels inside the rois
 		cv::Mat imgRope = cv::Mat::zeros( imgMap.size(), imgMap.type() );
 		for(int i = 0; i < roi_vec.size()-1; i++)

@@ -3,6 +3,7 @@
 
 #include <math.h>
 #include <vector>
+#include <numeric>
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -42,7 +43,7 @@ namespace ml
 	* \return roi created. If roi.height = 0 or roi.width = 0, stop seeking for rope
 	*/
 	void createROI( std::vector<std::vector<int> > linePoints,
-					cv::Mat &imgBW,
+					std::vector<float> lineAngles,
 					cv::Mat &imgViz,
 					int &minLineLength,
 					int &maxLineGap,
@@ -89,6 +90,17 @@ namespace ml
 
 	/*!
 	* author : Matheus Laranjeira
+	* date   : 27/06/2016
+	* 
+	* \brief  calculates the angle of the segment of line 'bline' wrt image vertical
+	* \param  bline : vector containing start and end point of a segment of line
+	* \return the angle alpha between the segment of line 'bline' and the image vertical
+	*/
+	float lineAngle(std::vector<int> bline);
+
+
+	/*!
+	* author : Matheus Laranjeira
 	* date   : 03/2016
 	* 
 	* \brief detects an orange rope in a given image
@@ -106,7 +118,7 @@ namespace ml
 	* \param  vector of lines representing segmented rope
 	* \return the segment to be added to the vector of lines with right direction
 	*/
-	void lineDirection(std::vector<std::vector<int> > linePoints, std::vector<float> lineAngles, std::vector<int> &bline);
+	void lineDirection(std::vector<float> lineAngles, std::vector<int> &bline);
 
 
 	/*!
