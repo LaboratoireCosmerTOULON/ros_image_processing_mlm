@@ -105,7 +105,6 @@ namespace ml
 		/* Initialize variables */
 		int dh, dw;		// roi height and width (Attention, the image was rotated by 90 deg)
 
-		std::cout<<"roi_k"<<roi.size()<<std::endl;
 
 		/* Create roi where rope will be detected */
 		if (roi.empty())	// if first roi, create a fixed window on image top
@@ -118,7 +117,6 @@ namespace ml
 			maxLineGap = floor(0.1*dh);
 			roi.push_back( cv::Rect(0.5*imgViz.cols-0.5*dw, 0, dw, dh) ); // create roi (Attention, the image was rotated) 
 			cv::rectangle(imgViz, roi.back(), cv::Scalar( 0, 55, 255 ), +1, 4 );	// draw roi
-			std::cout<<"roi0draw"<<std::endl;
 		}
 		else // the others roi are mobile windows with location depending on last rope segment position
 		{
@@ -130,31 +128,25 @@ namespace ml
 			// Control roi overflow
 			if(linePoints.back()[3] + 0.75*dh > imgViz.rows)			// overflow by bottom
 			{
-				std::cout<<"if1"<<std::endl;
 				roi.push_back( cv::Rect(0, 0, 0, 0) ); 
 			}
 			else if(linePoints.back()[3] - 0.25*dh < 0) 			// overflow by top
 			{
-				std::cout<<"if2"<<std::endl;
 				roi.push_back( cv::Rect(0, 0, 0, 0) );
 			}
 			else if(linePoints.back()[2] + 0.5*dw > imgViz.cols) // overflow by right
 			{
-				std::cout<<"if3"<<std::endl;
 				roi.push_back( cv::Rect(0, 0, 0, 0) );
 			}
 			else if(linePoints.back()[2] - 0.5*dw < 0) 			// overflow by left
 			{
-				std::cout<<"if4"<<std::endl;
 				roi.push_back( cv::Rect(0, 0, 0, 0) );
 			}
 			else
 			{
-				std::cout<<"if5"<<std::endl;
 				roi.push_back( cv::Rect(linePoints.back()[2] - 0.5*dw, linePoints.back()[3] - 0.25*dh, dw, dh) );
-				std::cout<<"roidraw"<<std::endl;
+
 				cv::rectangle(imgViz, roi.back(), cv::Scalar( 0, 255, 0 ), +1, 4 );	// draw roi
-				std::cout<<"roidraw"<<std::endl;
 			}
 		}
 	}
@@ -367,11 +359,6 @@ namespace ml
 			bline[2]= p1x;
 			bline[3]= p1y;
 		}
-		std::cout<<"line direction "<<std::endl;
-		for(int i = 0; i < lineAngles.size(); i++)
-		{
-			std::cout<<"angle"<<i<<" "<<lineAngles[i]*180/3.1416<<std::endl;	
-		}
 	}
 
 
@@ -394,13 +381,10 @@ namespace ml
 		int tmp_x, tmp_y;							// temporary variables for ordering line direction
 		cv::Point pline_o, pline_f;					// cvPoint for drawing lines
 
-		std::cout<<"Printing all hough lines... "<<std::endl;
-
 		/* Calculate the average position of lines */
 		for( size_t i = 0; i < lines.size(); i++ )
 		{
 			cv::Vec4i l = lines[i]; // extract line from vector of lines 
-			std::cout<<"line"<<i<<": "<<l[0]<<" "<<l[1]<<" "<<l[2]<<" "<<l[3]<<std::endl;
 			pline_o = cv::Point(l[0] + roi.x, l[1] + roi.y);	// line initial point
 			pline_f = cv::Point(l[2] + roi.x, l[3] + roi.y);	// line final point
 			cv::line(imgBW, pline_o, pline_f, cv::Scalar(0, 255, 0), 2, 8);			//draw line
@@ -436,8 +420,6 @@ namespace ml
 					std::vector<float> &angles )
 	{
 
-		std::cout<<std::endl<<"lineROI"<<std::endl;
-
 		/* Create ROI where rope detection will be performed */
 		// Parameters for line detection by Hough
 		int minLineLength;	// Minimum line length. Line segments shorter than that are rejected
@@ -448,16 +430,12 @@ namespace ml
 		{
 			seek = false;
 			createROI(linePoints, angles, imgViz, minLineLength, maxLineGap, roi);
-			// printing roi...		
-			std::cout<<"ROI: "<<roi.back().x<<" "<<roi.back().x+roi.back().width <<" "
-							  <<roi.back().y<<" "<<roi.back().y+roi.back().height<<std::endl;
 
 			/* Perform rope detection in roi using Hough algorithm. The rope is modeled by a segment in the roi */
 			std::vector<cv::Vec4i> lines;	// vector for line points storage
 			if(roi.back().height > 0 ) // if non null roi was created, seek for lines in it
 			{
 				HoughLinesP(imgBW(roi.back()), lines, 1, CV_PI/180, 20, minLineLength, maxLineGap ); 
-				std::cout<<"hough # lines: "<<lines.size()<<std::endl;
 			}
 
 			/* Choose most representative line between all lines detected */
@@ -476,17 +454,12 @@ namespace ml
 				/* Correction of line Direction 
 				 * Direction from hough : from image left to rigth
 				 * Used direction : from image top to bottom 		*/
-				std::cout<<"bestLine"<<std::endl;
 				lineDirection(angles, bline);
 				linePoints.push_back(bline);	// save average line points in vector linePoints
-				std::cout<<"bline"<<" "<<bline[0]<<" "<<bline[1]<<" "<<bline[2]<<" "<<bline[3]<<" "<<std::endl;
 
-				/* Plot and print */
-				std::cout<<"Angle"<<roi.size()<<": "<< alpha*(180/3.1416) <<std::endl; //print angle
+				/* Draw line */
 				cv::line(imgViz, cv::Point(bline[0],bline[1]), cv::Point(bline[2],bline[3]), cv::Scalar(0, 0, 255), 2, 8); //draw mean line
-				std::cout<<"Printing average line in roi "<<roi.size()-1<<std::endl;
-				std::cout<<"Line"<<linePoints.size()<<": "
-						 <<linePoints.back()[0]<<" "<<linePoints.back()[1]<<" "<<linePoints.back()[2]<<" "<<linePoints.back()[3]<<" "<<std::endl;
+
 				// keep seeking for rope since one more valid segment was found
 				seek = true;
 			}
@@ -515,9 +488,9 @@ namespace ml
 
 		/* Perform line detection */
 		// Initialize variables
-		std::vector<cv::Rect> roi_vec;				// vector containing ROIs where the rope should be detected 
-		std::vector<std::vector<int> > linePoints;	// point coordinates of the segemented line
-		std::vector<float> lineAngles;				// anlges of the segemented line
+		std::vector<cv::Rect> roi_vec;	// vector containing ROIs where the rope should be detected 
+		std::vector<std::vector<int> > linePoints;// point coordinates of the segemented line
+		std::vector<float> lineAngles;	// anlges of the segemented line
 
 		// find line in ROIs
 		std::cout<<std::endl<<"Start line detector"<<std::endl;
@@ -527,11 +500,7 @@ namespace ml
 		//ropeROI(linePoints, roi_vec);
 
 		/* Retrieve rope pixel coordinates */
-		std::vector<cv::Point> loc_roi;		// output, locations of non-zero pixels in current roi
-		std::cout<<"roi_vec size "<<roi_vec.size()<<std::endl;
-		std::cout<<"linePoints size "<<linePoints.size()<<std::endl;
-
-		std::cout<<"Print rope coordinates"<<std::endl;
+		std::vector<cv::Point> loc_roi;	// output, locations of non-zero pixels in current roi
 		// retieve non-zero pixels inside the rois
 		cv::Mat imgRope = cv::Mat::zeros( imgMap.size(), imgMap.type() );
 		for(int i = 0; i < roi_vec.size()-1; i++)
@@ -544,11 +513,6 @@ namespace ml
 				locations.push_back(loc_roi[j]);
 				imgRope.at<unsigned char>(locations.back().y,locations.back().x) = 255;
 			}
-		}
-		// plot roi_vec in BW image APAGAR DEPOIS
-		for(int i = 0; i < roi_vec.size(); i++)
-		{
-			cv::rectangle(imgMap, roi_vec[i], cv::Scalar(255, 255, 255 ), +1, 4 );	// draw roi
 		}
 		imgMap = imgRope.clone();
 	}
