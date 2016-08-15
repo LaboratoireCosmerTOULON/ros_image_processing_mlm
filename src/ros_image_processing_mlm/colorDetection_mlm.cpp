@@ -493,7 +493,6 @@ namespace ml
 		std::vector<float> lineAngles;	// anlges of the segemented line
 
 		// find line in ROIs
-		std::cout<<std::endl<<"Start line detector"<<std::endl;
 		lineROI(imgMap, roi_vec, imgViz, linePoints, lineAngles);
 
 		/* Create a roi bounding the rope */
