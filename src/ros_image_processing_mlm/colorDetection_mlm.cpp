@@ -22,10 +22,10 @@ namespace ml
 		int lowThreshold = 0;
 		// Morphological operations
 		int k_e = 2;	// erode kernel
-		int k_d = 7;	// dilate kernel
+		int k_d = 5;	// dilate kernel
 		// Color segmentation
 		int h_min = 0;	// minimum hue
-		int h_max = 10;	// maximum hue
+		int h_max = 13;	// maximum hue
 
 		/* Perform contour detection with Canny */
 		cv::cvtColor(src, srcGray, cv::COLOR_BGR2GRAY);	// from color to gray					
@@ -110,7 +110,7 @@ namespace ml
 		if (roi.empty())	// if first roi, create a fixed window on image top
 		{
 			// Set roi height and width
-			dw = 0.25*imgViz.cols;
+			dw = 0.5*imgViz.cols;
 			dh = 30;
 			// Set hough line detection parameters for rope detection in image top roi
 			minLineLength = floor(0.5*sqrt(2)*dh);
