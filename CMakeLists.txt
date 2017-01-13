@@ -27,7 +27,7 @@ find_package( OpenCV REQUIRED )
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES ros_image_processing_mlm ros_ml_transformations
+  LIBRARIES ros_image_processing_mlm
   CATKIN_DEPENDS roscpp rospy std_msgs sensor_msgs image_transport cv_bridge
   DEPENDS system_lib
 )
@@ -55,10 +55,6 @@ add_library(ros_image_processing_mlm
 #############
 ## Install project namespaced headers
 install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  FILES_MATCHING PATTERN "*.hpp"
-  PATTERN ".svn" EXCLUDE)
-install(DIRECTORY include/ros_ml_transformations/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   FILES_MATCHING PATTERN "*.hpp"
   PATTERN ".svn" EXCLUDE)
