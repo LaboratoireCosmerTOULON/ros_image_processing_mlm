@@ -175,9 +175,9 @@ namespace ml
 	  for(int i = 0; i < Pts.size(); i++)
 	  {
 	    cv::Vec3b color;
-	    color.val[0] = 255;
+	    color.val[0] = 0;
 	    color.val[1] = 255;
-	    color.val[2] = 255;
+	    color.val[2] = 0;
 
 	    if(Pts[i].y > 0 && Pts[i].y < img.rows && Pts[i].x > 0 && Pts[i].x < img.cols)
 	    {
@@ -186,6 +186,10 @@ namespace ml
 	      img.at<cv::Vec3b>(Pts[i].y,Pts[i].x)[2] = color[2];
 	    }
 	  }
+	  
+	  // Dilate img for better visualization
+	  const int m_d = 5;	// dilate kernel		
+	  cv::dilate(img, img, getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(m_d,m_d)));
 	}
 	
 	/*!
