@@ -29,3 +29,6 @@
 
 # Temporary files
 *~
+
+# Kdevelop files
+*.kdev4
