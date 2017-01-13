@@ -49,10 +49,6 @@ add_library(ros_image_processing_mlm
   include/${PROJECT_NAME}/colorDetection_mlm.hpp
   src/${PROJECT_NAME}/colorDetection_mlm.cpp
  )
-add_library(ros_ml_transformations
-  include/ros_ml_transformations/ml_transformations.hpp
-  src/ros_ml_transformations/ml_transformations.cpp
- )
 
 #############
 ## Install ##
