@@ -212,5 +212,16 @@ namespace ml
 	* \return a set of closed contours  
 	*/
 	cv::Mat rotateImg (cv::Mat src, int angle);
+	
+	/*!
+	* author : Matheus Laranjeira
+	* date   : 13/01/2017
+	* 
+	* \brief superimposes img2 over img1
+	* \param img1: background image
+	*	 img2: overlaying image 
+	* \return
+	*/
+	void overlayImages (cv::Mat img2, cv::Mat &img1);
 }
 #endif

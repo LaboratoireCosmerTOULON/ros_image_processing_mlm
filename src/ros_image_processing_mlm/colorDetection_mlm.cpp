@@ -622,4 +622,36 @@ namespace ml
 		cv::warpAffine(src, dst, rot, bbox.size());
 		return dst;
 	}
+	
+	/*!
+	* author : Matheus Laranjeira
+	* date   : 13/01/2017
+	* 
+	* \brief superimposes img2 over img1
+	* \param img1: background image
+	*	 img2: overlaying image 
+	* \return
+	*/
+	void overlayImages (cv::Mat img2, cv::Mat &img1)
+	{
+	  cv::Mat roi, img2_gray, mask, mask_inv, img1_bg, img2_fg, dst;
+	  
+	  // Extract img2 (overlaying img) information
+	  int rows,cols;
+	  rows = img2.rows;
+	  cols = img2.cols;
+	  // Def roi where img2 will be superimposed in img1
+	  roi = img1(cv::Rect(0,0,cols,rows));
+	  // Create a mask and inverse mask of img2
+	  cv::cvtColor(img2,img2_gray,cv::COLOR_BGR2GRAY);
+	  cv::threshold(img2_gray,mask,10,255,cv::THRESH_BINARY);
+	  cv::bitwise_not(mask,mask_inv);
+	  // Now black-out the area of logo in ROI
+	  cv::bitwise_and(roi,roi,img1_bg,mask_inv);
+	  // Take only region of logo from logo image
+	  cv::bitwise_and(img2,img2,img2_fg, mask);
+	  // Put img2 in img1
+	  cv::add(img1_bg,img2_fg,img1);	  
+
+	}
 }
