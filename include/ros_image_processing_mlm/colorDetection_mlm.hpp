@@ -56,7 +56,17 @@ namespace ml
 					int &maxLineGap,
 					std::vector<cv::Rect> &roi );
 
-
+	
+	/*!
+	* author : Matheus Laranjeira
+	* date   : 12/01/2017
+	* 
+	* \brief draws points in image
+	* \param Pts	: vector containing the image point to be drawn
+	* 	img	: image where catenary will be drawn
+	* \return 
+	*/
+	void drawPoints(std::vector<cv::Point> Pts, cv::Mat &img);
 
 	/*!
 	* author : Matheus Laranjeira

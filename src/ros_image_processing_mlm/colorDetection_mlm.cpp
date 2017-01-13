@@ -157,8 +157,37 @@ namespace ml
 			}
 		}
 	}
+	
+	/*!
+	* author : Matheus Laranjeira
+	* date   : 12/01/2017
+	* 
+	* \brief draws points in image
+	* \param Pts	: vector containing the image point to be drawn
+	* 	img	: image where catenary will be drawn
+	* \return 
+	*/
+	void drawPoints(std::vector<cv::Point> Pts, cv::Mat &img)
+	{
+	  int height, width;
+	  height = img.rows;
+	  width = img.cols;
+	  for(int i = 0; i < Pts.size(); i++)
+	  {
+	    cv::Vec3b color;
+	    color.val[0] = 255;
+	    color.val[1] = 255;
+	    color.val[2] = 255;
 
-
+	    if(Pts[i].y > 0 && Pts[i].y < img.rows && Pts[i].x > 0 && Pts[i].x < img.cols)
+	    {
+	      img.at<cv::Vec3b>(Pts[i].y,Pts[i].x)[0] = color[0];
+	      img.at<cv::Vec3b>(Pts[i].y,Pts[i].x)[1] = color[1];
+	      img.at<cv::Vec3b>(Pts[i].y,Pts[i].x)[2] = color[2];
+	    }
+	  }
+	}
+	
 	/*!
 	* author : Matheus Laranjeira
 	* date   : 03/2016
