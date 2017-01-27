@@ -169,15 +169,28 @@ namespace ml
 	*/
 	void drawPoints(std::vector<cv::Point> Pts, cv::Mat &img)
 	{
+	   cv::Vec3b color;
+	   color.val[0] = 0;
+	   color.val[1] = 255;
+	   color.val[2] = 0;
+	   drawPoints(Pts,img,color);
+	   return;
+	  
+	}
+
+	
+	
+	void drawPoints(std::vector<cv::Point> Pts, cv::Mat &img, const cv::Vec3b& color)
+	{
 	  int height, width;
 	  height = img.rows;
 	  width = img.cols;
 	  for(int i = 0; i < Pts.size(); i++)
 	  {
-	    cv::Vec3b color;
-	    color.val[0] = 0;
-	    color.val[1] = 255;
-	    color.val[2] = 0;
+	    //cv::Vec3b color;
+	    //color.val[0] = 0;
+	    //color.val[1] = 255;
+	    //color.val[2] = 0;
 
 	    if(Pts[i].y > 0 && Pts[i].y < img.rows && Pts[i].x > 0 && Pts[i].x < img.cols)
 	    {

@@ -66,6 +66,7 @@ namespace ml
 	* 	img	: image where catenary will be drawn
 	* \return 
 	*/
+	void drawPoints(std::vector<cv::Point> Pts, cv::Mat &img,const cv::Vec3b& color );
 	void drawPoints(std::vector<cv::Point> Pts, cv::Mat &img);
 
 	/*!
