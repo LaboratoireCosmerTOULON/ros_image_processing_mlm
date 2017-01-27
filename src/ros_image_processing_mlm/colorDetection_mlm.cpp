@@ -201,8 +201,8 @@ namespace ml
 	  }
 	  
 	  // Dilate img for better visualization
-	  const int m_d = 5;	// dilate kernel		
-	  cv::dilate(img, img, getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(m_d,m_d)));
+	  //const int m_d = 5;	// dilate kernel		
+	  //cv::dilate(img, img, getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(m_d,m_d)));
 	}
 	
 	/*!
